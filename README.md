@@ -24,7 +24,7 @@ cd sugarcoat
 
 ## Usage
 
-### Basic Pipeline Operations
+### Basic Belt Operations
 
 ```sugar
 # Chain operations with ->
