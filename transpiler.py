@@ -692,10 +692,16 @@ class Transpiler:
         
         def format_line_content(line: str, var: str, is_case_pattern: bool = False) -> str:
             line = line.strip()
-            if is_case_pattern and line.strip(':') == '_': return '_'
-            line = re.sub(r'\b_\.([a-zA-Z_]\w*)\b', fr'_sc_get_attr({var}, "\1")', line)
-            line = re.sub(r'\b_\b', var, line)
-            if not is_case_pattern: line = line.strip('{:}')
+            if is_case_pattern and line.strip(':') == '_': 
+                return '_'
+            
+            if is_case_pattern:
+                line = re.sub(r'\b_\b(?!["\'])', var, line)
+            else:
+                line = re.sub(r'\b_\.([a-zA-Z_]\w*)\b', fr'_sc_get_attr({var}, "\1")', line)
+                line = re.sub(r'\b_\b', var, line)
+                line = line.strip('{:}')
+            
             return line
 
         base_indent = indent
@@ -718,7 +724,6 @@ class Transpiler:
             current_block_indent = clause_indent
         elif keyword == 'match':
             self.output.append(f"{base_indent}match {temp_var}:")
-            self.output.append(f"{base_indent}    {result_var} = None # Default result for match")
         
         # 4. The Main Loop
         lines_to_process = block_lines[1:]
@@ -726,8 +731,8 @@ class Transpiler:
         
         def flush_clause_body():
             nonlocal current_clause_body
-            if not current_clause_body: self.output.append(f"{current_block_indent}pass")
-            else: self.output.extend(current_clause_body)
+            if current_clause_body:
+                self.output.extend(current_clause_body)
             current_clause_body = []
 
         for line in lines_to_process:
@@ -753,7 +758,12 @@ class Transpiler:
                 elif expr.startswith('case '):
                     current_block_indent = case_body_indent
                     pattern_str = expr[4:].strip().strip(':')
-                    pattern = format_line_content(pattern_str, temp_var, is_case_pattern=True)
+                    
+                    if pattern_str.startswith(('{', '[', '(')):
+                        pattern = pattern_str
+                    else:
+                        pattern = format_line_content(pattern_str, temp_var, is_case_pattern=True)
+                    
                     self.output.append(f"{clause_indent}case {pattern}:")
             else:
                 # It's a statement within the current clause body
@@ -768,11 +778,9 @@ class Transpiler:
         
         # 5. Final return or assignment
         if has_return:
-            final_var = result_var if keyword == 'match' else temp_var
-            self.output.append(f"{indent}return {final_var}")
+            self.output.append(f"{indent}return {temp_var}")
         elif parsed_expr.has_assignment:
-            final_var = result_var if keyword == 'match' else temp_var
-            self.output.append(f"{indent}{parsed_expr.assignment_var} = {final_var}")
+            self.output.append(f"{indent}{parsed_expr.assignment_var} = {temp_var}")
 
 def main():
     """Main function with source-mapped error reporting for all error types hopefully"""
