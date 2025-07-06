@@ -18,7 +18,7 @@ A sweet Python transpiler that adds syntactic sugar for more expressive and read
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/sugarcoat
+git clone https://github.com/Sugarlord32/Sugarcoat
 cd sugarcoat
 ```
 
