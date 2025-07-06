@@ -51,7 +51,7 @@ age = 25
 age >= 18 ? "adult" : "minor" -> print
 ```
 
-### Control Flow with Pipelines
+### Control Flow with Belts
 
 ```sugar
 numbers = [1, 2, 3, 4, 5]
